@@ -1,0 +1,2042 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>SimulSee — 複数配信同時視聴</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6959756264500656"
+     crossorigin="anonymous"></script>
+<style>
+  /* ─── Reset & Base ─── */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg:            #0d0d10;
+    --surface:       #16161b;
+    --surface-high:  #1d1d24;
+    --border:        #28283a;
+    --border-mid:    #333344;
+    --accent:        #9147ff;
+    --accent-dim:    #7b3fe0;
+    --accent-glow:   #9147ff33;
+    --accent-light:  #bf94ff;
+    --text-primary:  #f0f0f5;
+    --text-secondary:#8c8ca0;
+    --text-muted:    #4e4e64;
+    --danger:        #ff5555;
+    --panel-radius:  8px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ─── App Header ─── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .brand-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, #a855f7 0%, #6d28d9 50%, #4c1d95 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(109, 40, 217, 0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+  }
+  .brand-name {
+    font-size: 15px;
+    font-weight: 700;
+    background: linear-gradient(90deg, #bf94ff 0%, #a970ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.3px;
+  }
+
+  .header-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+  }
+
+  /* ─── Share Button ─── */
+  .share-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    width: 32px;
+    height: 30px;
+    border-radius: 7px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    flex-shrink: 0;
+  }
+  .share-btn:hover {
+    background: var(--accent-glow);
+    color: var(--accent-light);
+    border-color: var(--accent);
+  }
+
+  /* ─── Toast ─── */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--surface-high);
+    border: 1px solid var(--border-mid);
+    color: var(--text-primary);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 300;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ─── Slot Controls ─── */
+  .slot-ctrl {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
+  .slot-ctrl-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+  }
+  .slot-stepper {
+    display: flex;
+    align-items: center;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .count-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    width: 32px;
+    height: 30px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+    line-height: 1;
+  }
+  .count-btn:hover:not(:disabled) {
+    background: var(--accent-glow);
+    color: var(--accent-light);
+  }
+  .count-btn:disabled { opacity: 0.3; cursor: default; }
+  .slot-count-wrap {
+    min-width: 36px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+  .slot-count {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  /* ─── Viewer Grid ─── */
+  #viewer {
+    flex: 1;
+    display: grid;
+    gap: 4px;
+    padding: 4px;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  /* ─── Panel ─── */
+  .panel {
+    background: var(--surface);
+    border-radius: var(--panel-radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    transition: border-color 0.15s;
+  }
+  .panel.drag-over {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 0 20px var(--accent-glow);
+  }
+
+  /* ─── Panel Header ─── */
+  .panel-header {
+    background: var(--surface-high);
+    padding: 0 8px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  /* ─── Badge ─── */
+  .badge {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    z-index: 1;
+    text-transform: uppercase;
+  }
+  .badge-youtube {
+    background: rgba(255, 0, 0, 0.15);
+    color: #ff5a5a;
+    border: 1px solid rgba(255, 0, 0, 0.25);
+  }
+  .badge-twitch {
+    background: rgba(145, 71, 255, 0.15);
+    color: var(--accent-light);
+    border: 1px solid rgba(145, 71, 255, 0.3);
+  }
+
+  /* ─── Title Area ─── */
+  .title-area {
+    position: relative;
+    flex: 0 0 32%;
+    min-width: 0;
+    overflow: hidden;
+    z-index: 1;
+  }
+  .panel-title {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: text;
+    padding: 2px 0;
+    user-select: none;
+  }
+  .panel-title:hover { color: var(--text-primary); }
+  .title-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    padding: 1px 6px;
+    display: none;
+    outline: none;
+    z-index: 10;
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+
+  /* ─── Header Spacer ─── */
+  .header-spacer { flex: 1; }
+
+  /* ─── Drag Handle ─── */
+  .drag-handle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 16px;
+    letter-spacing: 4px;
+    color: var(--text-muted);
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .panel:hover .drag-handle { opacity: 1; }
+
+  /* ─── Panel Controls ─── */
+  .ctrl-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 13px;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    transition: background 0.12s, color 0.12s;
+    flex-shrink: 0;
+    z-index: 1;
+    position: relative;
+    line-height: 1;
+  }
+  .ctrl-btn:hover {
+    background: var(--border);
+    color: var(--text-primary);
+  }
+  .ctrl-btn.active { color: var(--accent-light); }
+  .ctrl-btn.active:hover { background: var(--accent-glow); }
+  .reload-btn { font-size: 15px; }
+
+  .panel-ext {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 13px;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    transition: background 0.12s, color 0.12s;
+    flex-shrink: 0;
+    z-index: 1;
+    position: relative;
+  }
+  .panel-ext:hover { background: var(--border); color: var(--text-primary); }
+
+  .panel-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 13px;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    transition: background 0.12s, color 0.12s;
+    flex-shrink: 0;
+    z-index: 1;
+    position: relative;
+    line-height: 1;
+  }
+  .panel-close:hover { background: rgba(255, 85, 85, 0.12); color: var(--danger); }
+
+  .sep {
+    width: 1px;
+    height: 14px;
+    background: var(--border);
+    margin: 0 1px;
+    flex-shrink: 0;
+    z-index: 1;
+    position: relative;
+  }
+
+  /* ─── Panel Body (video + chat wrapper) ─── */
+  .panel-body {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* ─── Media Container ─── */
+  .media-container {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+    background: #000;
+  }
+
+  /* ─── Chat Container ─── */
+  .chat-container {
+    width: 0;
+    flex-shrink: 0;
+    overflow: hidden;
+    border-left: 0px solid var(--border);
+    background: var(--bg);
+    transition: width 0.25s cubic-bezier(0.4,0,0.2,1),
+                border-left-width 0.25s;
+  }
+  .chat-container.open {
+    width: 40%;
+    border-left-width: 1px;
+  }
+  .chat-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+
+  /* チャットはスマホ縦画面では非表示 */
+  @media (max-width: 768px) and (orientation: portrait) {
+    .chat-container { display: none !important; }
+  }
+  .media-container > *:not(.drag-overlay) {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+  }
+  .media-container iframe {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+  }
+  .media-container > div > iframe {
+    width: 100% !important;
+    height: 100% !important;
+    border: none !important;
+  }
+
+  /* Overlay blocks iframe drag interference */
+  .drag-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    background: transparent;
+    display: none;
+    cursor: grabbing;
+  }
+  body.is-dragging .drag-overlay { display: block; }
+
+  /* ─── Empty Panel ─── */
+  .panel-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    transition: color 0.2s, background 0.2s;
+    border-radius: 0 0 var(--panel-radius) var(--panel-radius);
+  }
+  .panel-empty:hover {
+    color: var(--accent-light);
+    background: var(--accent-glow);
+  }
+  .panel-empty .empty-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px dashed currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-style: normal;
+    transition: transform 0.2s;
+    line-height: 1;
+  }
+  .panel-empty:hover .empty-icon { transform: scale(1.1); }
+  .panel-empty .empty-label { letter-spacing: 0.2px; }
+
+  /* ─── Modal ─── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface-high);
+    border: 1px solid var(--border-mid);
+    border-radius: 14px;
+    padding: 28px;
+    width: 460px;
+    max-width: 92vw;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.04);
+    animation: modal-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes modal-in {
+    from { opacity: 0; transform: scale(0.92) translateY(8px); }
+    to   { opacity: 1; transform: scale(1)    translateY(0);   }
+  }
+
+  .modal-title {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: var(--text-primary);
+  }
+
+  .modal-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .modal-tab {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .modal-tab:hover { border-color: var(--border-mid); color: var(--text-primary); }
+  .modal-tab.active {
+    background: var(--accent-glow);
+    border-color: var(--accent);
+    color: var(--accent-light);
+  }
+  .tab-platform-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .tab-platform-icon svg { width: 100%; height: 100%; display: block; }
+  .tab-platform-name { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+  .tab-platform-desc { font-size: 11px; color: var(--text-muted); }
+  .modal-tab.active .tab-platform-desc { color: var(--accent-light); opacity: 0.85; }
+
+  /* Platform link (open site) */
+  .modal-platform-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-decoration: none;
+    margin-bottom: 16px;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+  }
+  .modal-platform-link:hover {
+    color: var(--text-primary);
+    border-color: var(--border-mid);
+    background: var(--surface);
+  }
+  .modal-platform-link .link-ext { font-size: 11px; opacity: 0.7; }
+
+  .modal-input-area { display: none; }
+  .modal-input-area.visible { display: block; }
+
+  .modal-input {
+    width: 100%;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 14px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-family: inherit;
+    margin-bottom: 10px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .modal-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .modal-input::placeholder { color: var(--text-muted); }
+
+  .modal-hint {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    line-height: 1.7;
+  }
+  .modal-hint strong { color: var(--text-secondary); }
+
+  /* ─── Preview Card ─── */
+  #preview-area { margin-bottom: 16px; }
+
+  .preview-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .preview-spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border-mid);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .preview-card {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    align-items: center;
+  }
+  .preview-thumb {
+    width: 112px;
+    height: 63px;
+    border-radius: 6px;
+    object-fit: cover;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+  .preview-thumb-placeholder {
+    width: 112px;
+    height: 63px;
+    border-radius: 6px;
+    background: var(--accent-glow);
+    border: 1px solid rgba(145,71,255,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+  }
+  .preview-info { flex: 1; min-width: 0; }
+  .preview-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    margin-bottom: 5px;
+  }
+  .preview-sub {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+  .preview-error {
+    padding: 12px 14px;
+    background: rgba(255,85,85,0.08);
+    border: 1px solid rgba(255,85,85,0.25);
+    border-radius: 10px;
+    color: var(--danger);
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+
+  .preview-confirm-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    text-align: center;
+  }
+
+  /* Twitch offline thumbnail placeholder */
+  .preview-thumb-offline {
+    width: 112px;
+    height: 63px;
+    border-radius: 6px;
+    background: #131318;
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    flex-shrink: 0;
+    font-size: 18px;
+  }
+  .preview-thumb-offline span {
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+    font-family: inherit;
+  }
+
+  /* ─── Modal Actions ─── */
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  /* ─── Buttons ─── */
+  .btn {
+    padding: 9px 18px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    transition: opacity 0.15s, transform 0.1s;
+    letter-spacing: 0.2px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:hover { opacity: 0.88; }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(145, 71, 255, 0.4);
+  }
+  .btn-secondary {
+    background: var(--border);
+    color: var(--text-secondary);
+  }
+  .btn-secondary:hover { color: var(--text-primary); }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--accent-light);
+    border: 1.5px solid var(--accent);
+  }
+  .btn-outline:hover { background: var(--accent-glow); }
+
+  .btn-danger {
+    background: rgba(255, 85, 85, 0.12);
+    color: var(--danger);
+    border: 1px solid rgba(255, 85, 85, 0.3);
+  }
+  .btn-danger:hover { background: rgba(255, 85, 85, 0.22); opacity: 1; }
+
+  /* ─── Confirm Dialog ─── */
+  .confirm-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(3px);
+  }
+  .confirm-overlay.open { display: flex; }
+
+  .confirm-dialog {
+    background: var(--surface-high);
+    border: 1px solid var(--border-mid);
+    border-radius: 12px;
+    padding: 24px;
+    width: 360px;
+    max-width: 90vw;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    animation: modal-in 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .confirm-icon {
+    font-size: 28px;
+    margin-bottom: 12px;
+    display: block;
+  }
+  .confirm-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+  }
+  .confirm-msg {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+    line-height: 1.65;
+  }
+  .confirm-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  /* ─── Layout Picker ─── */
+  .layout-picker { position: relative; }
+  .layout-btn {
+    width: 36px; height: 30px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--text-secondary);
+    transition: all 0.15s;
+  }
+  .layout-btn:hover, .layout-btn.open {
+    border-color: var(--accent);
+    color: var(--accent-light);
+    background: var(--accent-glow);
+  }
+  .layout-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: var(--surface-high);
+    border: 1px solid var(--border-mid);
+    border-radius: 12px;
+    padding: 6px;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 180px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+    z-index: 200;
+  }
+  .layout-dropdown.open { display: flex; }
+  .layout-option {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 8px;
+    background: transparent; border: 1px solid transparent;
+    cursor: pointer; color: var(--text-secondary);
+    font-size: 13px; font-weight: 500; font-family: inherit;
+    width: 100%; text-align: left; transition: all 0.15s;
+  }
+  .layout-option:hover { background: var(--surface); color: var(--text-primary); }
+  .layout-option.active {
+    background: var(--accent-glow);
+    color: var(--accent-light);
+    border-color: rgba(145,71,255,0.3);
+  }
+  .layout-option-icon {
+    width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ─── Column mode ─── */
+  #viewer.mode-column {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: unset !important;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    gap: 0 !important;
+    padding: 0 !important;
+  }
+  #viewer.mode-column .panel {
+    height: calc(56.25vw + 34px);
+    flex-shrink: 0;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    border-bottom: 1px solid var(--border);
+  }
+  #viewer.mode-column .panel:last-child {
+    border-bottom: none;
+  }
+
+  /* ─── Mobile Landscape（ノッチ・ダイナミックアイランド対応） ─── */
+  @media (max-width: 1024px) and (orientation: landscape) {
+    header {
+      padding-left:  max(20px, env(safe-area-inset-left));
+      padding-right: max(20px, env(safe-area-inset-right));
+    }
+    #viewer {
+      padding-left:   max(4px, env(safe-area-inset-left));
+      padding-right:  max(4px, env(safe-area-inset-right));
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+  }
+
+  /* ─── Mobile Portrait ─── */
+  @media (max-width: 768px) and (orientation: portrait) {
+    #viewer {
+      grid-template-columns: 1fr !important;
+      grid-template-rows: unset !important;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      gap: 0 !important;
+      padding: 0 !important;
+      padding-left:   env(safe-area-inset-left, 0px) !important;
+      padding-right:  env(safe-area-inset-right, 0px) !important;
+      padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+    }
+    .panel {
+      height: calc(
+        (100vw - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))
+        * 9 / 16 + 34px
+      );
+      flex-shrink: 0;
+      border-radius: 0;
+      border-left: none;
+      border-right: none;
+      border-top: none;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel:last-child { border-bottom: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">
+      <!-- 4-screen grid icon representing multi-stream -->
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="8" height="8" rx="1.5" fill="white" fill-opacity="0.95"/>
+        <rect x="10" y="0" width="8" height="8" rx="1.5" fill="white" fill-opacity="0.7"/>
+        <rect x="0" y="10" width="8" height="8" rx="1.5" fill="white" fill-opacity="0.6"/>
+        <rect x="10" y="10" width="8" height="8" rx="1.5" fill="white" fill-opacity="0.4"/>
+        <!-- Play triangle on top-left screen -->
+        <polygon points="2.5,2.5 2.5,5.5 5,4" fill="white" fill-opacity="0.0"/>
+      </svg>
+    </div>
+    <span class="brand-name">SimulSee</span>
+  </div>
+  <div class="header-divider"></div>
+  <div class="slot-ctrl">
+    <!-- Layout picker -->
+    <div class="layout-picker" id="layout-picker">
+      <button class="layout-btn" id="layout-btn" onclick="toggleLayoutPicker()" title="レイアウトを変更">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+          <rect x="0" y="0" width="6" height="6" rx="1"/>
+          <rect x="8" y="0" width="6" height="6" rx="1"/>
+          <rect x="0" y="8" width="6" height="6" rx="1"/>
+          <rect x="8" y="8" width="6" height="6" rx="1"/>
+        </svg>
+      </button>
+      <div class="layout-dropdown" id="layout-dropdown">
+        <button class="layout-option active" data-layout="grid" onclick="setLayout('grid')">
+          <div class="layout-option-icon">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+              <rect x="0" y="0" width="6" height="6" rx="1"/>
+              <rect x="8" y="0" width="6" height="6" rx="1"/>
+              <rect x="0" y="8" width="6" height="6" rx="1"/>
+              <rect x="8" y="8" width="6" height="6" rx="1"/>
+            </svg>
+          </div>
+          グリッド
+        </button>
+        <button class="layout-option" data-layout="column" onclick="setLayout('column')">
+          <div class="layout-option-icon">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+              <rect x="0" y="0" width="14" height="3" rx="1"/>
+              <rect x="0" y="5.5" width="14" height="3" rx="1"/>
+              <rect x="0" y="11" width="14" height="3" rx="1"/>
+            </svg>
+          </div>
+          縦一列
+        </button>
+        <button class="layout-option" data-layout="main-side" onclick="setLayout('main-side')">
+          <div class="layout-option-icon">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+              <rect x="0" y="0" width="8" height="14" rx="1"/>
+              <rect x="10" y="0" width="4" height="6" rx="1"/>
+              <rect x="10" y="8" width="4" height="6" rx="1"/>
+            </svg>
+          </div>
+          メイン＋サイド
+        </button>
+      </div>
+    </div>
+    <div class="header-divider"></div>
+    <span class="slot-ctrl-label">画面数</span>
+    <div class="slot-stepper">
+      <button class="count-btn" id="btn-minus" onclick="changeSlotCount(-1)" title="画面を減らす">−</button>
+      <div class="slot-count-wrap">
+        <span class="slot-count" id="slot-count-label">2</span>
+      </div>
+      <button class="count-btn" id="btn-plus" onclick="changeSlotCount(+1)" title="画面を増やす">＋</button>
+    </div>
+    <div class="header-divider"></div>
+    <button class="share-btn" onclick="shareURL()" title="URLをコピーして共有">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 1.5h3.5V5M13.5 1.5L7 8M6 2.5H2.5A1 1 0 001.5 3.5v8A1 1 0 002.5 12.5h8a1 1 0 001-1V8"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<div id="viewer"></div>
+
+<!-- ─── Add Stream Modal ─── -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <p class="modal-title">配信を追加</p>
+    <!-- Input section: hidden after "確認する" succeeds, restored by "← URLを変更" -->
+    <div id="modal-input-section">
+      <div class="modal-tabs">
+        <button class="modal-tab" id="tab-yt" onclick="switchTab('youtube')">
+          <div class="tab-platform-icon">
+            <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="44" height="44" fill="#FF0000"/>
+              <path d="M33 16.5s-.3-2-1.2-2.8c-1.1-1.2-2.4-1.2-3-1.3C25.7 12 22 12 22 12s-3.7 0-6.8.4c-.6.1-1.9.1-3 1.3-.9.8-1.2 2.8-1.2 2.8S10.7 18.8 10.7 22v2c0 2.3.3 4.5.3 4.5s.3 2 1.2 2.8c1.1 1.2 2.6 1.1 3.3 1.2C17.5 32.8 22 33 22 33s3.7 0 6.8-.5c.6-.1 1.9-.1 3-1.3.9-.8 1.2-2.8 1.2-2.8s.3-2.2.3-4.5v-2c0-2.2-.3-4.4-.3-4.4zm-13.2 9.1V18.4l8.2 3.6-8.2 3.6z" fill="white"/>
+            </svg>
+          </div>
+          <span class="tab-platform-name">YouTube</span>
+          <span class="tab-platform-desc">動画・ライブ配信</span>
+        </button>
+        <button class="modal-tab" id="tab-tw" onclick="switchTab('twitch')">
+          <div class="tab-platform-icon">
+            <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="44" height="44" fill="#9147FF"/>
+              <path d="M13 9L9 13.5v19.5h7.5v4.5L21 33h5.5l9-9V9H13zm18.5 21L27 34.5h-5L18 39v-4.5h-6.5V11.5h20v18.5z" fill="white"/>
+              <rect x="24.5" y="16" width="3" height="7.5" rx="1.5" fill="white"/>
+              <rect x="17.5" y="16" width="3" height="7.5" rx="1.5" fill="white"/>
+            </svg>
+          </div>
+          <span class="tab-platform-name">Twitch</span>
+          <span class="tab-platform-desc">ライブ配信</span>
+        </button>
+      </div>
+      <div class="modal-input-area" id="area-youtube">
+        <a href="https://www.youtube.com" target="_blank" class="modal-platform-link">
+          YouTubeで配信・動画を探す <span class="link-ext">↗</span>
+        </a>
+        <input class="modal-input" id="yt-input" placeholder="例: https://www.youtube.com/watch?v=xxxxx">
+        <p class="modal-hint">
+          YouTube の動画URL・Shorts URL・ライブURL など各種形式に対応しています。<br>
+          ⚠️ 動画によっては埋め込み不可の場合があります。
+        </p>
+      </div>
+      <div class="modal-input-area" id="area-twitch">
+        <a href="https://www.twitch.tv/directory/all" target="_blank" class="modal-platform-link">
+          Twitchで配信中のチャンネルを探す <span class="link-ext">↗</span>
+        </a>
+        <input class="modal-input" id="tw-input" placeholder="例: ninja（ユーザー名またはURL）">
+        <p class="modal-hint">
+          Twitch のユーザー名またはURLを入力してください。<br>
+          ユーザー名とは twitch.tv/<strong>〇〇</strong> の〇〇の部分です。
+        </p>
+      </div>
+    </div>
+    <!-- Preview area (shown after 確認する, replaces input section) -->
+    <div id="preview-area" style="display:none"></div>
+    <!-- Actions: input state -->
+    <div class="modal-actions" id="actions-input">
+      <button class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
+      <button class="btn btn-outline" id="modal-check" onclick="checkStream()" disabled>確認する</button>
+    </div>
+    <!-- Actions: preview state (hidden until checkStream succeeds) -->
+    <div class="modal-actions" id="actions-preview" style="display:none">
+      <button class="btn btn-secondary" onclick="backToInput()">← URLを変更</button>
+      <button class="btn btn-primary"   onclick="addStream()">配信を見る</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Confirm Dialog ─── -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-dialog">
+    <span class="confirm-icon">🗑️</span>
+    <p class="confirm-title">削除の確認</p>
+    <p class="confirm-msg" id="confirm-msg"></p>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" onclick="closeConfirm()">キャンセル</button>
+      <button class="btn btn-danger"    onclick="doConfirm()">削除する</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://embed.twitch.tv/embed/v1.js"></script>
+<script>
+  // ─────────────────── STATE ───────────────────
+  const MAX_SLOTS = 9;
+  let slots     = [null, null];
+  let slotState = {};          // { [i]: { playing, muted } }
+  let ytPlayers = {};          // { [i]: YT.Player }
+  let twPlayers = {};          // { [i]: Twitch.Player }
+  let ytApiReady = false;
+  let pendingYT  = [];         // queued inits before API ready: { i, s, autostart }
+  let dragSrc    = null;
+  let currentTab = null;
+  let targetSlot = 0;
+  let layoutMode = 'grid';
+
+  // Modal preview state
+  let previewReady    = false;  // true when preview confirmed and addStream() is valid
+  let pendingStream   = null;   // stream data validated during checkStream()
+  let confirmCallback = null;   // callback for confirm dialog
+
+  // ─────────────────── PLAYER SLOT LOOKUP ───────────────────
+  function ytSlotOf(p) {
+    for (const k in ytPlayers) if (ytPlayers[k] === p) return +k;
+    return -1;
+  }
+  function twSlotOf(p) {
+    for (const k in twPlayers) if (twPlayers[k] === p) return +k;
+    return -1;
+  }
+
+  // ─────────────────── URL SHARE ───────────────────
+  function getShareURL() {
+    const parts = [layoutMode];
+    slots.forEach(s => {
+      if (s) {
+        if (s.type === 'youtube') {
+          parts.push(`yt:${s.videoId}:${encodeURIComponent(s.label)}`);
+        } else {
+          parts.push(`tw:${s.channel}:${encodeURIComponent(s.label)}`);
+        }
+      } else {
+        parts.push('_');
+      }
+    });
+    return `${location.origin}${location.pathname}#${parts.join('/')}`;
+  }
+
+  function loadFromHash() {
+    const hash = location.hash.slice(1);
+    if (!hash) return;
+    const parts = hash.split('/');
+    if (parts.length < 2) return;
+
+    const layoutPart = parts[0];
+    if (['grid', 'column', 'main-side'].includes(layoutPart)) {
+      layoutMode = layoutPart;
+    }
+
+    const newSlots = [];
+    for (let i = 1; i < parts.length && newSlots.length < MAX_SLOTS; i++) {
+      const part = parts[i];
+      if (part === '_') {
+        newSlots.push(null);
+      } else if (part.startsWith('yt:')) {
+        const idx1 = part.indexOf(':');
+        const idx2 = part.indexOf(':', idx1 + 1);
+        const videoId = part.slice(idx1 + 1, idx2);
+        const label   = decodeURIComponent(part.slice(idx2 + 1) || videoId);
+        if (videoId) newSlots.push({ type:'youtube', videoId, label,
+          url:`https://www.youtube.com/watch?v=${videoId}` });
+      } else if (part.startsWith('tw:')) {
+        const idx1 = part.indexOf(':');
+        const idx2 = part.indexOf(':', idx1 + 1);
+        const channel = part.slice(idx1 + 1, idx2);
+        const label   = decodeURIComponent(part.slice(idx2 + 1) || channel);
+        if (channel) newSlots.push({ type:'twitch', channel, label,
+          url:`https://www.twitch.tv/${channel}` });
+      }
+    }
+
+    if (newSlots.length > 0) {
+      slots = newSlots;
+      slots.forEach((_, i) => { slotState[i] = { playing: false, muted: false, chatOpen: false }; });
+    }
+  }
+
+  async function shareURL() {
+    const url = getShareURL();
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('🔗 URLをコピーしました！');
+    } catch {
+      prompt('このURLをコピーして共有してください:', url);
+    }
+  }
+
+  function showToast(msg) {
+    const existing = document.querySelector('.toast');
+    if (existing) existing.remove();
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = msg;
+    document.body.appendChild(toast);
+    requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('show')));
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
+    }, 2500);
+  }
+
+  // ─────────────────── CHAT TOGGLE ───────────────────
+  function _chatIframeSrc(i) {
+    const s = slots[i];
+    if (!s) return null;
+    const domain = location.hostname || 'localhost';
+    if (s.type === 'twitch') {
+      return `https://www.twitch.tv/embed/${s.channel}/chat?parent=${domain}&darkpopout`;
+    } else {
+      // YouTube: need video id; works only for live streams
+      return `https://www.youtube.com/live_chat?v=${s.videoId}&embed_domain=${domain}`;
+    }
+  }
+
+  function _openChat(i) {
+    const container = document.getElementById('chat-' + i);
+    if (!container) return;
+    container.classList.add('open');
+    if (!container.querySelector('iframe')) {
+      const src = _chatIframeSrc(i);
+      if (src) {
+        const iframe = document.createElement('iframe');
+        iframe.src = src;
+        iframe.allow = 'autoplay';
+        container.appendChild(iframe);
+      }
+    }
+    const btn = document.getElementById('chat-btn-' + i);
+    if (btn) btn.classList.add('active');
+    if (slotState[i]) slotState[i].chatOpen = true;
+  }
+
+  function _closeChat(i) {
+    const container = document.getElementById('chat-' + i);
+    if (!container) return;
+    container.classList.remove('open');
+    const btn = document.getElementById('chat-btn-' + i);
+    if (btn) btn.classList.remove('active');
+    if (slotState[i]) slotState[i].chatOpen = false;
+  }
+
+  function toggleChat(i) {
+    if (!slots[i]) return;
+    const st = slotState[i] || {};
+    if (st.chatOpen) _closeChat(i);
+    else             _openChat(i);
+  }
+
+  // ─────────────────── GRID LAYOUT ───────────────────
+  function calcCols(n) {
+    if (n <= 1) return 1;
+    if (n <= 2) return 2;
+    if (n <= 4) return 2;
+    return 3;
+  }
+  const LAYOUT_ICONS = {
+    grid: `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="8" y="0" width="6" height="6" rx="1"/><rect x="0" y="8" width="6" height="6" rx="1"/><rect x="8" y="8" width="6" height="6" rx="1"/></svg>`,
+    column: `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="14" height="3" rx="1"/><rect x="0" y="5.5" width="14" height="3" rx="1"/><rect x="0" y="11" width="14" height="3" rx="1"/></svg>`,
+    'main-side': `<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="0" y="0" width="8" height="14" rx="1"/><rect x="10" y="0" width="4" height="6" rx="1"/><rect x="10" y="8" width="4" height="6" rx="1"/></svg>`
+  };
+
+  function toggleLayoutPicker() {
+    const dd  = document.getElementById('layout-dropdown');
+    const btn = document.getElementById('layout-btn');
+    const open = dd.classList.toggle('open');
+    btn.classList.toggle('open', open);
+  }
+
+  function setLayout(mode) {
+    layoutMode = mode;
+    document.querySelectorAll('.layout-option').forEach(el =>
+      el.classList.toggle('active', el.dataset.layout === mode)
+    );
+    document.getElementById('layout-btn').innerHTML = LAYOUT_ICONS[mode];
+    document.getElementById('layout-dropdown').classList.remove('open');
+    document.getElementById('layout-btn').classList.remove('open');
+    updateGridLayout();
+  }
+
+  document.addEventListener('click', e => {
+    const picker = document.getElementById('layout-picker');
+    if (picker && !picker.contains(e.target)) {
+      document.getElementById('layout-dropdown').classList.remove('open');
+      document.getElementById('layout-btn').classList.remove('open');
+    }
+  });
+
+  function updateGridLayout() {
+    const viewer = document.getElementById('viewer');
+    const n = slots.length;
+
+    // Reset mode class and per-panel styles
+    viewer.classList.remove('mode-column');
+    viewer.querySelectorAll('.panel').forEach(p => {
+      p.style.gridColumn = '';
+      p.style.gridRow = '';
+    });
+
+    if (layoutMode === 'column') {
+      viewer.classList.add('mode-column');
+      viewer.style.gridTemplateColumns = '1fr';
+      viewer.style.gridTemplateRows = '';
+
+    } else if (layoutMode === 'main-side' && n > 1) {
+      const sideCount = n - 1;
+      viewer.style.gridTemplateColumns = '2fr 1fr';
+      viewer.style.gridTemplateRows = `repeat(${sideCount}, 1fr)`;
+      viewer.style.overflow = '';
+      // メインパネル（slot 0）：左列・全行スパン
+      const mainPanel = document.getElementById('panel-0');
+      if (mainPanel) {
+        mainPanel.style.gridColumn = '1';
+        mainPanel.style.gridRow = `1 / ${sideCount + 1}`;
+      }
+      // サイドパネル（slot 1〜）：右列
+      for (let i = 1; i < n; i++) {
+        const p = document.getElementById('panel-' + i);
+        if (p) p.style.gridColumn = '2';
+      }
+
+    } else {
+      // grid（デフォルト）またはmain-sideでn<=1
+      const cols = calcCols(n);
+      viewer.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+      viewer.style.gridTemplateRows    = `repeat(${Math.ceil(n / cols)}, 1fr)`;
+      viewer.style.overflow = '';
+    }
+
+    document.getElementById('slot-count-label').textContent = n;
+    document.getElementById('btn-minus').disabled = n <= 1;
+    document.getElementById('btn-plus').disabled  = n >= MAX_SLOTS;
+  }
+
+  // ─────────────────── PANEL HELPERS ───────────────────
+  function getPanelEl(i) { return document.getElementById('panel-' + i); }
+
+  function headerHTML(i) {
+    const s  = slots[i];
+    const st = slotState[i] || { playing: false, muted: false, chatOpen: false };
+    if (!s) return '';
+    const chatActive = st.chatOpen ? ' active' : '';
+    return `<div class="panel-header">
+        <span class="badge badge-${s.type}">${s.type === 'youtube' ? 'YT' : 'TW'}</span>
+        <div class="title-area">
+          <span class="panel-title" id="title-${i}">${escHtml(s.label)}</span>
+          <input class="title-input" id="title-input-${i}" type="text" value="${escHtml(s.label)}">
+        </div>
+        <div class="header-spacer"></div>
+        <button class="ctrl-btn${st.playing ? ' active' : ''}" id="play-btn-${i}"
+          onclick="togglePlay(${i})" title="再生/停止">${st.playing ? '⏸' : '▶'}</button>
+        <button class="ctrl-btn${st.muted ? ' active' : ''}" id="mute-btn-${i}"
+          onclick="toggleMute(${i})" title="ミュート/解除">${st.muted ? '🔇' : '🔊'}</button>
+        <button class="ctrl-btn reload-btn" onclick="reloadSlot(${i})" title="動画をリロード">↺</button>
+        <button class="ctrl-btn chat-btn${chatActive}" id="chat-btn-${i}"
+          onclick="toggleChat(${i})" title="チャットを開く/閉じる">💬</button>
+        <div class="sep"></div>
+        <a href="${escHtml(s.url)}" target="_blank" class="panel-ext" title="別タブで開く">↗</a>
+        <button class="panel-close" onclick="clearSlot(${i})" title="動画を消す">✕</button>
+        <div class="drag-handle">⠿ ⠿ ⠿</div>
+      </div>`;
+  }
+
+  function renderPanelHeader(i) {
+    const panel = getPanelEl(i);
+    if (!panel || !slots[i]) return;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = headerHTML(i);
+    const newHeader = tmp.querySelector('.panel-header');
+    if (!newHeader) return;
+    const oldHeader = panel.querySelector('.panel-header');
+    if (oldHeader) panel.replaceChild(newHeader, oldHeader);
+    else           panel.insertBefore(newHeader, panel.firstChild);
+    setupTitleEdit(i);
+  }
+
+  function renderPanelFull(i, autostart = false) {
+    destroyPlayerAt(i);
+    const panel = getPanelEl(i);
+    if (!panel) return;
+    const s = slots[i];
+
+    if (!s) {
+      panel.draggable = false;
+      panel.innerHTML = `<div class="panel-empty" onclick="openModal(${i})">
+          <span class="empty-icon">＋</span>
+          <span class="empty-label">配信を追加</span>
+        </div>`;
+      return;
+    }
+
+    panel.draggable = true;
+    const innerTag = s.type === 'youtube' ? `<div id="yt-inner-${i}"></div>`
+                                           : `<div id="tw-inner-${i}"></div>`;
+    panel.innerHTML = `${headerHTML(i)}
+      <div class="panel-body">
+        <div class="media-container" id="media-${i}">
+          ${innerTag}
+          <div class="drag-overlay"></div>
+        </div>
+        <div class="chat-container" id="chat-${i}"></div>
+      </div>`;
+
+    setupTitleEdit(i);
+    if (slotState[i]) {
+      slotState[i].playing = false;
+      if (slotState[i].chatOpen) _openChat(i);
+    } else {
+      slotState[i] = { playing: false, muted: false, chatOpen: false };
+    }
+
+    setTimeout(() => {
+      if (s.type === 'youtube') initYTPlayer(i, s, autostart);
+      else                      initTWPlayer(i, s, autostart);
+    }, 0);
+  }
+
+  function createPanelShell(i) {
+    const div = document.createElement('div');
+    div.className = 'panel';
+    div.id = 'panel-' + i;
+    div.dataset.slot = i;
+
+    div.addEventListener('dragstart', e => {
+      if (e.target.classList.contains('title-input') ||
+          e.target.classList.contains('panel-title')) { e.preventDefault(); return; }
+      dragSrc = +div.dataset.slot;
+      e.dataTransfer.effectAllowed = 'move';
+      document.body.classList.add('is-dragging');
+      setTimeout(() => { div.style.opacity = '0.5'; }, 0);
+    });
+    div.addEventListener('dragend', () => {
+      div.style.opacity = '';
+      document.body.classList.remove('is-dragging');
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('drag-over'));
+      dragSrc = null;
+    });
+    div.addEventListener('dragover', e => {
+      e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('drag-over'));
+      div.classList.add('drag-over');
+    });
+    div.addEventListener('dragleave', () => div.classList.remove('drag-over'));
+    div.addEventListener('drop', e => {
+      e.preventDefault();
+      div.classList.remove('drag-over');
+      const dst = +div.dataset.slot;
+      if (dragSrc !== null && dragSrc !== dst) swapPanels(dragSrc, dst);
+    });
+
+    return div;
+  }
+
+  // ─────────────────── TITLE EDIT ───────────────────
+  function setupTitleEdit(i) {
+    const span  = document.getElementById('title-' + i);
+    const input = document.getElementById('title-input-' + i);
+    if (!span || !input) return;
+
+    span.addEventListener('click', e => {
+      e.stopPropagation();
+      if (!slots[i]) return;
+      input.value = slots[i].label;
+      input.style.display = 'block';
+      span.style.visibility = 'hidden';
+      input.focus();
+      input.select();
+    });
+
+    function saveTitle() {
+      const val = input.value.trim();
+      if (slots[i] && val) slots[i].label = val;
+      span.textContent = slots[i] ? slots[i].label : '';
+    }
+    function hideInput() {
+      input.style.display = 'none';
+      span.style.visibility = 'visible';
+    }
+
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter')  { e.preventDefault(); saveTitle(); input.select(); }
+      if (e.key === 'Escape') { saveTitle(); hideInput(); }
+    });
+    input.addEventListener('blur',      () => { saveTitle(); hideInput(); });
+    input.addEventListener('mousedown', e => e.stopPropagation());
+    input.setAttribute('draggable', 'false');
+  }
+
+  // ─────────────────── INIT GRID ───────────────────
+  function initGrid() {
+    const viewer = document.getElementById('viewer');
+    viewer.innerHTML = '';
+    for (let i = 0; i < slots.length; i++) {
+      viewer.appendChild(createPanelShell(i));
+      renderPanelFull(i);
+    }
+    updateGridLayout();
+  }
+
+  // ─────────────────── PLAYER INIT ───────────────────
+  function initYTPlayer(i, s, autostart = false) {
+    if (!ytApiReady) { pendingYT.push({i, s, autostart}); return; }
+    if (!document.getElementById('yt-inner-' + i)) return;
+    // スロットの内容が差し替えられていたら古いエントリは無視する
+    if (slots[i]?.videoId !== s.videoId) return;
+    let player;
+    player = ytPlayers[i] = new YT.Player('yt-inner-' + i, {
+      videoId:    s.videoId,
+      playerVars: {
+        rel:            0,
+        modestbranding: 1,
+        autoplay:       autostart ? 1 : 0,
+      },
+      events: {
+        onReady: ev => {
+          if (slotState[i]?.muted) ev.target.mute();
+          if (autostart) {
+            if (!slotState[i]) slotState[i] = { playing: false, muted: false };
+            slotState[i].playing = true;
+            updatePlayBtn(i, true);
+          }
+        },
+        onStateChange: ev => {
+          const si = ytSlotOf(player);
+          if (si < 0) return;
+          if (!slotState[si]) slotState[si] = { playing: false, muted: false };
+          const playing = ev.data === YT.PlayerState.PLAYING;
+          slotState[si].playing = playing;
+          updatePlayBtn(si, playing);
+        }
+      }
+    });
+  }
+
+  function initTWPlayer(i, s, autostart = false) {
+    if (typeof Twitch === 'undefined') return;
+    if (!document.getElementById('tw-inner-' + i)) return;
+    const parent = location.hostname || 'localhost';
+    const player = twPlayers[i] = new Twitch.Player('tw-inner-' + i, {
+      channel:  s.channel,
+      parent:   [parent],
+      autoplay: autostart,
+      muted:    slotState[i]?.muted || false,
+      height:   '100%',
+      width:    '100%',
+    });
+    if (autostart) {
+      if (!slotState[i]) slotState[i] = { playing: false, muted: false };
+      slotState[i].playing = true;
+      updatePlayBtn(i, true);
+    }
+    player.addEventListener(Twitch.Player.PLAY, () => {
+      const si = twSlotOf(player); if (si < 0) return;
+      if (!slotState[si]) slotState[si] = { playing: false, muted: false };
+      slotState[si].playing = true;
+      updatePlayBtn(si, true);
+    });
+    player.addEventListener(Twitch.Player.PAUSE, () => {
+      const si = twSlotOf(player); if (si < 0) return;
+      if (!slotState[si]) slotState[si] = { playing: false, muted: false };
+      slotState[si].playing = false;
+      updatePlayBtn(si, false);
+    });
+  }
+
+  function updatePlayBtn(i, playing) {
+    const btn = document.getElementById('play-btn-' + i);
+    if (btn) { btn.textContent = playing ? '⏸' : '▶'; btn.classList.toggle('active', playing); }
+  }
+  function updateMuteBtn(i, muted) {
+    const btn = document.getElementById('mute-btn-' + i);
+    if (btn) { btn.textContent = muted ? '🔇' : '🔊'; btn.classList.toggle('active', muted); }
+  }
+
+  function destroyPlayerAt(i) {
+    if (ytPlayers[i]) { try { ytPlayers[i].destroy(); } catch(e){} delete ytPlayers[i]; }
+    if (twPlayers[i]) { try { twPlayers[i].destroy && twPlayers[i].destroy(); } catch(e){} delete twPlayers[i]; }
+  }
+
+  window.onYouTubeIframeAPIReady = function() {
+    ytApiReady = true;
+    // 同一スロットに複数エントリある場合は最後（最新）のみ処理
+    const latest = {};
+    pendingYT.forEach(item => { latest[item.i] = item; });
+    Object.values(latest).forEach(({i, s, autostart}) => initYTPlayer(i, s, autostart));
+    pendingYT = [];
+  };
+
+  // ─────────────────── CONTROLS ───────────────────
+  function togglePlay(i) {
+    const s = slots[i]; if (!s) return;
+    if (!slotState[i]) slotState[i] = { playing: false, muted: false };
+    slotState[i].playing = !slotState[i].playing;
+    const playing = slotState[i].playing;
+    if (s.type === 'youtube') { const p = ytPlayers[i]; if (p) playing ? p.playVideo() : p.pauseVideo(); }
+    else                      { const p = twPlayers[i]; if (p) playing ? p.play() : p.pause(); }
+    updatePlayBtn(i, playing);
+  }
+
+  function toggleMute(i) {
+    const s = slots[i]; if (!s) return;
+    if (!slotState[i]) slotState[i] = { playing: false, muted: false };
+    slotState[i].muted = !slotState[i].muted;
+    const muted = slotState[i].muted;
+    if (s.type === 'youtube') { const p = ytPlayers[i]; if (p) muted ? p.mute() : p.unMute(); }
+    else                      { const p = twPlayers[i]; if (p) p.setMuted(muted); }
+    updateMuteBtn(i, muted);
+  }
+
+  function reloadSlot(i) {
+    if (!slots[i]) return;
+    const wasPlaying = !!(slotState[i]?.playing);
+    const wasMuted   = !!(slotState[i]?.muted);
+    const wasChatOpen = !!(slotState[i]?.chatOpen);
+    slotState[i] = { playing: false, muted: wasMuted, chatOpen: wasChatOpen };
+    renderPanelFull(i, wasPlaying);
+    updateGridLayout();
+  }
+
+  // ─────────────────── SLOT OPERATIONS ───────────────────
+
+  function changeSlotCount(delta) {
+    const next = slots.length + delta;
+    if (next < 1 || next > MAX_SLOTS) return;
+
+    // ── Feature 1: confirm before removing a slot with content ──
+    if (delta < 0) {
+      const last = slots.length - 1;
+      if (slots[last]) {
+        showConfirm(
+          `「${slots[last].label}」を削除しますか？\n画面数を減らすと最後の画面が削除されます。`,
+          () => _doChangeSlotCount(delta)
+        );
+        return;
+      }
+    }
+    _doChangeSlotCount(delta);
+  }
+
+  function _doChangeSlotCount(delta) {
+    const viewer = document.getElementById('viewer');
+    if (delta > 0) {
+      const i = slots.length;
+      slots.push(null);
+      const panel = createPanelShell(i);
+      viewer.appendChild(panel);
+      renderPanelFull(i);
+    } else {
+      const i = slots.length - 1;
+      destroyPlayerAt(i);
+      getPanelEl(i)?.remove();
+      slots.pop();
+      delete slotState[i];
+    }
+    updateGridLayout();
+  }
+
+  function clearSlot(i) {
+    // ── Feature 1: confirm before deleting a slot with content ──
+    if (slots[i]) {
+      showConfirm(
+        `「${slots[i].label}」を削除しますか？`,
+        () => _doClearSlot(i)
+      );
+      return;
+    }
+    _doClearSlot(i);
+  }
+
+  function _doClearSlot(i) {
+    destroyPlayerAt(i);
+    const viewer = document.getElementById('viewer');
+    const n = slots.length;
+    const deletedPanel = getPanelEl(i);
+    deletedPanel.id = 'panel-__del__';
+
+    for (let j = i; j < n - 1; j++) {
+      const nextPanel = getPanelEl(j + 1);
+      viewer.insertBefore(nextPanel, deletedPanel);
+      nextPanel.id = 'panel-' + j;
+      nextPanel.dataset.slot = j;
+      ytPlayers[j] = ytPlayers[j + 1]; delete ytPlayers[j + 1];
+      twPlayers[j] = twPlayers[j + 1]; delete twPlayers[j + 1];
+      slots[j]     = slots[j + 1];
+      slotState[j] = slotState[j + 1];
+      // chat-container IDを更新
+      const chatEl = nextPanel.querySelector('.chat-container');
+      if (chatEl) chatEl.id = 'chat-' + j;
+      const mediaEl = nextPanel.querySelector('.media-container');
+      if (mediaEl) mediaEl.id = 'media-' + j;
+      renderPanelHeader(j);
+    }
+
+    const last = n - 1;
+    deletedPanel.id = 'panel-' + last;
+    deletedPanel.dataset.slot = last;
+    slots[last] = null; delete slotState[last];
+    deletedPanel.draggable = false;
+    deletedPanel.innerHTML = `<div class="panel-empty" onclick="openModal(${last})">
+        <span class="empty-icon">＋</span>
+        <span class="empty-label">配信を追加</span>
+      </div>`;
+    updateGridLayout();
+  }
+
+  function swapPanels(a, b) {
+    if (a === b) return;
+
+    const aWasPlaying = !!(slotState[a]?.playing);
+    const bWasPlaying = !!(slotState[b]?.playing);
+    const aMuted      = !!(slotState[a]?.muted);
+    const bMuted      = !!(slotState[b]?.muted);
+    const aChatOpen   = !!(slotState[a]?.chatOpen);
+    const bChatOpen   = !!(slotState[b]?.chatOpen);
+
+    destroyPlayerAt(a);
+    destroyPlayerAt(b);
+
+    [slots[a], slots[b]] = [slots[b], slots[a]];
+    slotState[a] = { playing: false, muted: bMuted, chatOpen: bChatOpen };
+    slotState[b] = { playing: false, muted: aMuted, chatOpen: aChatOpen };
+
+    renderPanelFull(a, slots[a] ? bWasPlaying : false);
+    renderPanelFull(b, slots[b] ? aWasPlaying : false);
+    updateGridLayout();
+  }
+
+  // ─────────────────── CONFIRM DIALOG ───────────────────
+  function showConfirm(message, onConfirm) {
+    document.getElementById('confirm-msg').textContent = message;
+    confirmCallback = onConfirm;
+    document.getElementById('confirm-overlay').classList.add('open');
+  }
+  function closeConfirm() {
+    document.getElementById('confirm-overlay').classList.remove('open');
+    confirmCallback = null;
+  }
+  function doConfirm() {
+    const cb = confirmCallback;
+    closeConfirm();
+    if (cb) cb();
+  }
+
+  // ─────────────────── MODAL ───────────────────
+  function openModal(slotIndex) {
+    targetSlot = slotIndex;
+    currentTab = null;
+    document.getElementById('yt-input').value = '';
+    document.getElementById('tw-input').value = '';
+    ['area-youtube','area-twitch'].forEach(id =>
+      document.getElementById(id).classList.remove('visible'));
+    ['tab-yt','tab-tw'].forEach(id =>
+      document.getElementById(id).classList.remove('active'));
+    resetPreview();
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+    resetPreview();
+  }
+
+  function switchTab(tab) {
+    currentTab = tab;
+    document.getElementById('tab-yt').classList.toggle('active', tab === 'youtube');
+    document.getElementById('tab-tw').classList.toggle('active', tab === 'twitch');
+    document.getElementById('area-youtube').classList.toggle('visible', tab === 'youtube');
+    document.getElementById('area-twitch').classList.toggle('visible', tab === 'twitch');
+    resetPreview();
+    // 切り替え先タブの入力が空なら「確認する」は無効のまま
+    const inputEl = document.getElementById(tab === 'youtube' ? 'yt-input' : 'tw-input');
+    document.getElementById('modal-check').disabled = !(inputEl && inputEl.value.trim());
+    setTimeout(() => inputEl && inputEl.focus(), 30);
+  }
+
+  // Reset to input state (called on openModal / tab switch / backToInput)
+  function resetPreview() {
+    previewReady  = false;
+    pendingStream = null;
+    const pa = document.getElementById('preview-area');
+    pa.style.display = 'none';
+    pa.innerHTML = '';
+    document.getElementById('modal-input-section').style.display = '';
+    document.getElementById('actions-input').style.display        = '';
+    document.getElementById('actions-preview').style.display      = 'none';
+    document.getElementById('modal-check').disabled = true;
+  }
+
+  // "← URLを変更" — go back to input view without closing modal
+  function backToInput() {
+    resetPreview();
+    document.getElementById('modal-input-section').style.display = '';
+    // re-enable check button if there's already text in the active input
+    const activeInput = document.getElementById(
+      currentTab === 'youtube' ? 'yt-input' : 'tw-input'
+    );
+    document.getElementById('modal-check').disabled = !(activeInput && activeInput.value.trim());
+  }
+
+  // ── Feature 2: "確認する" clicked → fetch preview ──
+  async function checkStream() {
+    if (!currentTab) return;
+
+    const checkBtn = document.getElementById('modal-check');
+    const area = document.getElementById('preview-area');
+
+    // Parse input first
+    let stream;
+    if (currentTab === 'youtube') {
+      const val = document.getElementById('yt-input').value.trim();
+      const id  = extractYouTubeId(val);
+      if (!id) {
+        area.style.display = 'block';
+        area.innerHTML = `<div class="preview-error">
+          URLを認識できませんでした。対応形式: watch?v=… / youtu.be/… / shorts/… / live/…
+        </div>`;
+        return;
+      }
+      stream = { type:'youtube', videoId:id, label:id,
+                 url:`https://www.youtube.com/watch?v=${id}` };
+    } else {
+      const raw = document.getElementById('tw-input').value.trim();
+      const ch  = raw.replace(/^@/,'').replace(/.*twitch\.tv\/([^/?#]+).*/,'$1').trim()
+                     .replace(/[^a-zA-Z0-9_]/g, '');  // Twitchユーザー名の有効文字のみ
+      if (!ch) {
+        area.style.display = 'block';
+        area.innerHTML = `<div class="preview-error">
+          ユーザー名またはURLを入力してください。
+        </div>`;
+        return;
+      }
+      stream = { type:'twitch', channel:ch, label:ch,
+                 url:`https://www.twitch.tv/${ch}` };
+    }
+
+    // Show loading spinner (input section still visible during load)
+    checkBtn.disabled = true;
+    area.style.display = 'block';
+    area.innerHTML = `<div class="preview-loading">
+      <div class="preview-spinner"></div>
+      情報を取得中…
+    </div>`;
+
+    try {
+      let cardHTML;
+      if (stream.type === 'youtube') {
+        const res = await fetch(
+          `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${stream.videoId}&format=json`
+        );
+        if (!res.ok) throw new Error('not found');
+        const d = await res.json();
+        stream.label = d.author_name || stream.videoId;
+        const title  = d.title       || stream.videoId;
+        const thumb  = d.thumbnail_url || `https://img.youtube.com/vi/${stream.videoId}/hqdefault.jpg`;
+        cardHTML = `<div class="preview-card">
+          <img class="preview-thumb" src="${escHtml(thumb)}" alt="thumbnail"
+               onerror="this.style.display='none'">
+          <div class="preview-info">
+            <div class="preview-title">${escHtml(title)}</div>
+            <div class="preview-sub">🔴 ${escHtml(stream.label)}</div>
+          </div>
+        </div>`;
+      } else {
+        // Twitch: run live-check and display-name fetch in parallel
+        const ch       = stream.channel;
+        const thumbUrl = `https://static-cdn.jtvnw.net/previews-ttv/live_user_${encodeURIComponent(ch.toLowerCase())}-320x180.jpg`;
+
+        const [displayName, isLive] = await Promise.all([
+          // 1) Display name via Twitch internal GQL
+          fetchTwitchDisplayName(ch),
+          // 2) Live detection: blob size of preview thumbnail
+          (async () => {
+            try {
+              const imgRes = await fetch(thumbUrl);
+              if (!imgRes.ok) return null;
+              const blob = await imgRes.blob();
+              return blob.size > 8000;
+            } catch { return null; }
+          })()
+        ]);
+
+        // title shows display name when available, fallback to username
+        const nameLabel = escHtml(displayName || ch);
+
+        let thumbHTML, titleText, subText;
+        if (isLive === true) {
+          // Live: real thumbnail, title = 表示名, sub = ユーザー名
+          thumbHTML = `<img class="preview-thumb" src="${escHtml(thumbUrl)}" alt="thumbnail"
+                           onerror="this.style.display='none'">`;
+          titleText = nameLabel;
+          subText   = escHtml(ch);
+        } else if (isLive === false) {
+          // Offline: placeholder UI, title = "現在配信していません。", sub = ユーザー名
+          thumbHTML = `<div class="preview-thumb-offline">📴<span>OFFLINE</span></div>`;
+          titleText = '現在配信していません。';
+          subText   = escHtml(ch);
+        } else {
+          // Unknown: neutral, title = 表示名, sub = ユーザー名
+          thumbHTML = `<img class="preview-thumb" src="${escHtml(thumbUrl)}" alt="thumbnail"
+                           onerror="this.outerHTML='<div class=\\'preview-thumb-placeholder\\'>🟣</div>'">`;
+          titleText = nameLabel;
+          subText   = escHtml(ch);
+        }
+
+        cardHTML = `<div class="preview-card">
+          ${thumbHTML}
+          <div class="preview-info">
+            <div class="preview-title">${titleText}</div>
+            <div class="preview-sub">${subText}</div>
+          </div>
+        </div>`;
+      }
+
+      // Success: hide input section, show preview + confirmation text
+      pendingStream = stream;
+      previewReady  = true;
+      document.getElementById('modal-input-section').style.display = 'none';
+      area.innerHTML = `<p class="preview-confirm-text">この配信でよいですか？</p>${cardHTML}`;
+      document.getElementById('actions-input').style.display   = 'none';
+      document.getElementById('actions-preview').style.display = '';
+
+    } catch (err) {
+      area.innerHTML = `<div class="preview-error">
+        情報を取得できませんでした。URLやユーザー名を確認してください。
+      </div>`;
+      checkBtn.disabled = false;
+    }
+  }
+
+  // Add stream — uses pendingStream set during checkStream()
+  function addStream() {
+    if (!previewReady || !pendingStream) return;
+
+    const slot = targetSlot;
+    const newStream = pendingStream;
+    slots[slot]     = newStream;
+    slotState[slot] = { playing: false, muted: false, chatOpen: false };
+    closeModal();
+    renderPanelFull(slot);
+    updateGridLayout();
+  }
+
+  // Enable "確認する" when there's text; reset preview if user edits after preview shown
+  document.getElementById('yt-input').addEventListener('input', e => {
+    if (previewReady) resetPreview();
+    document.getElementById('modal-check').disabled = !e.target.value.trim();
+  });
+  document.getElementById('tw-input').addEventListener('input', e => {
+    if (previewReady) resetPreview();
+    document.getElementById('modal-check').disabled = !e.target.value.trim();
+  });
+
+  // ─────────────────── TWITCH DISPLAY NAME ───────────────────
+  // Uses Twitch's internal GQL endpoint (same one the Twitch website uses in-browser)
+  async function fetchTwitchDisplayName(channel) {
+    try {
+      const res = await fetch('https://gql.twitch.tv/gql', {
+        method: 'POST',
+        headers: {
+          'Client-Id': 'kimne78kx3ncx6brgo4mv6wki5h1ko',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify([{
+          query: `{ user(login: "${channel}") { displayName } }`
+        }])
+      });
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json?.[0]?.data?.user?.displayName ?? null;
+    } catch { return null; }
+  }
+
+  // ─────────────────── HELPERS ───────────────────
+  function extractYouTubeId(input) {
+    if (!input) return null;
+    if (/^[A-Za-z0-9_-]{11}$/.test(input)) return input;
+    for (const p of [
+      /[?&]v=([A-Za-z0-9_-]{11})/,
+      /youtu\.be\/([A-Za-z0-9_-]{11})/,
+      /\/embed\/([A-Za-z0-9_-]{11})/,
+      /\/shorts\/([A-Za-z0-9_-]{11})/,
+      /\/live\/([A-Za-z0-9_-]{11})/,
+      /\/v\/([A-Za-z0-9_-]{11})/,
+    ]) { const m = input.match(p); if (m) return m[1]; }
+    return null;
+  }
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // Click outside modal to close
+  document.getElementById('modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal')) closeModal();
+  });
+  // Click outside confirm to close
+  document.getElementById('confirm-overlay').addEventListener('click', e => {
+    if (e.target === document.getElementById('confirm-overlay')) closeConfirm();
+  });
+
+  document.addEventListener('keydown', e => {
+    // Confirm dialog takes priority
+    if (document.getElementById('confirm-overlay').classList.contains('open')) {
+      if (e.key === 'Enter')  doConfirm();
+      if (e.key === 'Escape') closeConfirm();
+      return;
+    }
+    if (!document.getElementById('modal').classList.contains('open')) return;
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (e.key === 'Enter') {
+      if (previewReady) addStream();
+      else if (currentTab) checkStream();
+    }
+  });
+
+  loadFromHash();
+  initGrid();
+  // ハッシュで指定されたレイアウトをボタンに反映
+  document.getElementById('layout-btn').innerHTML = LAYOUT_ICONS[layoutMode];
+  document.querySelectorAll('.layout-option').forEach(el =>
+    el.classList.toggle('active', el.dataset.layout === layoutMode)
+  );
+</script>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
