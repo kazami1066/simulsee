@@ -1528,11 +1528,13 @@
       },
       events: {
         onReady: ev => {
-          if (slotState[i]?.muted) ev.target.mute();
+          const si = ytSlotOf(player);
+          if (si < 0) return;
+          if (slotState[si]?.muted) ev.target.mute();
           if (autostart) {
-            if (!slotState[i]) slotState[i] = { playing: false, muted: false };
-            slotState[i].playing = true;
-            updatePlayBtn(i, true);
+            if (!slotState[si]) slotState[si] = { playing: false, muted: false };
+            slotState[si].playing = true;
+            updatePlayBtn(si, true);
           }
         },
         onStateChange: ev => {
@@ -1723,6 +1725,7 @@
 
     const panelA = getPanelEl(a);
     const panelB = getPanelEl(b);
+    if (!panelA || !panelB) return;
 
     // panel-body を取り出す（空スロットは null）
     const bodyA = panelA.querySelector('.panel-body') || null;
@@ -1756,6 +1759,7 @@
     // パネルA を再構築
     if (slots[a]) {
       panelA.draggable = true;
+      panelA.querySelector('.panel-empty')?.remove();
       renderPanelHeader(a);
       if (bodyB) panelA.appendChild(bodyB);
     } else {
@@ -1769,6 +1773,7 @@
     // パネルB を再構築
     if (slots[b]) {
       panelB.draggable = true;
+      panelB.querySelector('.panel-empty')?.remove();
       renderPanelHeader(b);
       if (bodyA) panelB.appendChild(bodyA);
     } else {
