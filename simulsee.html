@@ -1721,22 +1721,64 @@
   function swapPanels(a, b) {
     if (a === b) return;
 
-    const aWasPlaying = !!(slotState[a]?.playing);
-    const bWasPlaying = !!(slotState[b]?.playing);
-    const aMuted      = !!(slotState[a]?.muted);
-    const bMuted      = !!(slotState[b]?.muted);
-    const aChatOpen   = !!(slotState[a]?.chatOpen);
-    const bChatOpen   = !!(slotState[b]?.chatOpen);
+    const panelA = getPanelEl(a);
+    const panelB = getPanelEl(b);
 
-    destroyPlayerAt(a);
-    destroyPlayerAt(b);
+    // panel-body を取り出す（空スロットは null）
+    const bodyA = panelA.querySelector('.panel-body') || null;
+    const bodyB = panelB.querySelector('.panel-body') || null;
 
-    [slots[a], slots[b]] = [slots[b], slots[a]];
-    slotState[a] = { playing: false, muted: bMuted, chatOpen: bChatOpen };
-    slotState[b] = { playing: false, muted: aMuted, chatOpen: aChatOpen };
+    if (bodyA) panelA.removeChild(bodyA);
+    if (bodyB) panelB.removeChild(bodyB);
 
-    renderPanelFull(a, slots[a] ? bWasPlaying : false);
-    renderPanelFull(b, slots[b] ? aWasPlaying : false);
+    // bodyA のDOM内IDをスロット b 用に更新
+    if (bodyA) {
+      bodyA.querySelector('.media-container')?.setAttribute('id', 'media-' + b);
+      bodyA.querySelector('.chat-container')?.setAttribute('id', 'chat-' + b);
+      const ytA = bodyA.querySelector('[id^="yt-inner-"]'); if (ytA) ytA.id = 'yt-inner-' + b;
+      const twA = bodyA.querySelector('[id^="tw-inner-"]'); if (twA) twA.id = 'tw-inner-' + b;
+    }
+
+    // bodyB のDOM内IDをスロット a 用に更新
+    if (bodyB) {
+      bodyB.querySelector('.media-container')?.setAttribute('id', 'media-' + a);
+      bodyB.querySelector('.chat-container')?.setAttribute('id', 'chat-' + a);
+      const ytB = bodyB.querySelector('[id^="yt-inner-"]'); if (ytB) ytB.id = 'yt-inner-' + a;
+      const twB = bodyB.querySelector('[id^="tw-inner-"]'); if (twB) twB.id = 'tw-inner-' + a;
+    }
+
+    // プレイヤー参照・スロットデータを入れ替え
+    [ytPlayers[a], ytPlayers[b]] = [ytPlayers[b], ytPlayers[a]];
+    [twPlayers[a], twPlayers[b]] = [twPlayers[b], twPlayers[a]];
+    [slots[a],     slots[b]]     = [slots[b],     slots[a]];
+    [slotState[a], slotState[b]] = [slotState[b], slotState[a]];
+
+    // パネルA を再構築
+    if (slots[a]) {
+      panelA.draggable = true;
+      renderPanelHeader(a);
+      if (bodyB) panelA.appendChild(bodyB);
+    } else {
+      panelA.draggable = false;
+      panelA.innerHTML = `<div class="panel-empty" onclick="openModal(${a})">
+          <span class="empty-icon">＋</span>
+          <span class="empty-label">配信を追加</span>
+        </div>`;
+    }
+
+    // パネルB を再構築
+    if (slots[b]) {
+      panelB.draggable = true;
+      renderPanelHeader(b);
+      if (bodyA) panelB.appendChild(bodyA);
+    } else {
+      panelB.draggable = false;
+      panelB.innerHTML = `<div class="panel-empty" onclick="openModal(${b})">
+          <span class="empty-icon">＋</span>
+          <span class="empty-label">配信を追加</span>
+        </div>`;
+    }
+
     updateGridLayout();
   }
 
