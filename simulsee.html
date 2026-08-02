@@ -1120,6 +1120,15 @@
   let targetSlot = 0;
   let layoutMode = 'grid';
 
+  // ─────────────────── MOBILE ───────────────────
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (navigator.maxTouchPoints > 1 && /Mac/i.test(navigator.platform));
+
+  // モバイルではデフォルトミュート
+  function newSlotState(overrides = {}) {
+    return { playing: false, muted: isMobile, chatOpen: false, ...overrides };
+  }
+
   // Modal preview state
   let previewReady    = false;  // true when preview confirmed and addStream() is valid
   let pendingStream   = null;   // stream data validated during checkStream()
@@ -1187,7 +1196,7 @@
 
     if (newSlots.length > 0) {
       slots = newSlots;
-      slots.forEach((_, i) => { slotState[i] = { playing: false, muted: false, chatOpen: false }; });
+      slots.forEach((_, i) => { slotState[i] = newSlotState(); });
     }
   }
 
@@ -1421,7 +1430,7 @@
       slotState[i].playing = false;
       if (slotState[i].chatOpen) _openChat(i);
     } else {
-      slotState[i] = { playing: false, muted: false, chatOpen: false };
+      slotState[i] = newSlotState();
     }
 
     setTimeout(() => {
@@ -1525,6 +1534,8 @@
         rel:            0,
         modestbranding: 1,
         autoplay:       autostart ? 1 : 0,
+        playsinline:    1,
+        mute:           (isMobile || slotState[i]?.muted) ? 1 : 0,
       },
       events: {
         onReady: ev => {
@@ -1616,9 +1627,22 @@
 
   function toggleMute(i) {
     const s = slots[i]; if (!s) return;
-    if (!slotState[i]) slotState[i] = { playing: false, muted: false };
+    if (!slotState[i]) slotState[i] = newSlotState();
     slotState[i].muted = !slotState[i].muted;
     const muted = slotState[i].muted;
+
+    // モバイル: ミュート解除時は他をすべてミュート
+    if (isMobile && !muted) {
+      slots.forEach((_, j) => {
+        if (j === i || !slots[j]) return;
+        if (!slotState[j]) slotState[j] = newSlotState();
+        slotState[j].muted = true;
+        if (slots[j].type === 'youtube') { const p = ytPlayers[j]; if (p) p.mute(); }
+        else                             { const p = twPlayers[j]; if (p) p.setMuted(true); }
+        updateMuteBtn(j, true);
+      });
+    }
+
     if (s.type === 'youtube') { const p = ytPlayers[i]; if (p) muted ? p.mute() : p.unMute(); }
     else                      { const p = twPlayers[i]; if (p) p.setMuted(muted); }
     updateMuteBtn(i, muted);
@@ -1996,7 +2020,7 @@
     const slot = targetSlot;
     const newStream = pendingStream;
     slots[slot]     = newStream;
-    slotState[slot] = { playing: false, muted: false, chatOpen: false };
+    slotState[slot] = newSlotState();
     closeModal();
     renderPanelFull(slot);
     updateGridLayout();
