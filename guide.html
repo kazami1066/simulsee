@@ -64,7 +64,7 @@
     font-weight: 500; padding: 6px 12px; border-radius: 6px;
     transition: color 0.15s, background 0.15s;
   }
-  .nav-link:hover { color: var(--text-primary); background: var(--surface); }
+  .nav-link:hover, .nav-link.active { color: var(--text-primary); background: var(--surface); }
   .nav-cta {
     background: var(--accent); color: #fff; text-decoration: none;
     font-size: 13px; font-weight: 600; padding: 7px 16px; border-radius: 8px;
@@ -528,6 +528,8 @@
   </a>
   <div class="nav-links">
     <a href="/" class="nav-link">ホーム</a>
+    <a href="/guide" class="nav-link active">使い方</a>
+    <a href="/blog" class="nav-link">ブログ</a>
     <a href="/simulsee" class="nav-cta">アプリを開く →</a>
   </div>
 </nav>

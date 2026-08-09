@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>コラボ配信を両方同時に見る方法【視点切り替え不要】 — SimulSee</title>
+<meta name="description" content="コラボ配信を両視点同時に楽しむ方法を解説。SimulSeeを使えば、コラボしている配信者の画面を並べて、互いのリアクションをリアルタイムで楽しめます。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6959756264500656" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0d0d10; --surface: #16161b; --surface-high: #1d1d24;
+    --border: #28283a; --accent: #34d399; --accent-light: #6ee7b7;
+    --accent-glow: #34d39933; --text-primary: #f0f0f5;
+    --text-secondary: #8c8ca0; --text-muted: #4e4e64;
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text-primary); font-family: 'Inter', system-ui, sans-serif; line-height: 1.7; }
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(13,13,16,0.85); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .nav-logo { width: 32px; height: 32px; background: linear-gradient(135deg, #6ee7b7 0%, #10b981 50%, #065f46 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .nav-name { font-size: 15px; font-weight: 700; background: linear-gradient(90deg, #6ee7b7, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .nav-links { display: flex; align-items: center; gap: 8px; }
+  .nav-link { color: var(--text-secondary); text-decoration: none; font-size: 13px; font-weight: 500; padding: 6px 12px; border-radius: 6px; transition: color 0.15s, background 0.15s; }
+  .nav-link:hover { color: var(--text-primary); background: var(--surface); }
+  .nav-cta { background: var(--accent); color: #fff; text-decoration: none; font-size: 13px; font-weight: 600; padding: 7px 16px; border-radius: 8px; transition: opacity 0.15s; }
+  .nav-cta:hover { opacity: 0.88; }
+  .page-wrap { max-width: 760px; margin: 0 auto; padding: 60px 24px; }
+  .breadcrumb { font-size: 13px; color: var(--text-muted); margin-bottom: 32px; }
+  .breadcrumb a { color: var(--text-muted); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--accent-light); }
+  .article-tag { display: inline-block; font-size: 11px; font-weight: 700; color: var(--accent-light); background: var(--accent-glow); border: 1px solid rgba(52,211,153,0.3); border-radius: 999px; padding: 3px 10px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+  h1 { font-size: clamp(24px, 4vw, 36px); font-weight: 800; letter-spacing: -0.5px; line-height: 1.3; margin-bottom: 16px; }
+  .article-meta { font-size: 13px; color: var(--text-muted); margin-bottom: 40px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+  .article-body h2 { font-size: 22px; font-weight: 700; margin: 40px 0 16px; color: var(--text-primary); }
+  .article-body h3 { font-size: 17px; font-weight: 700; margin: 28px 0 12px; color: var(--text-primary); }
+  .article-body p { font-size: 15px; color: var(--text-secondary); line-height: 1.85; margin-bottom: 20px; }
+  .article-body strong { color: var(--text-primary); }
+  .before-after { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 28px 0; }
+  .ba-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+  .ba-card.before { border-color: #f87171; }
+  .ba-card.after { border-color: var(--accent); }
+  .ba-label { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .ba-card.before .ba-label { color: #f87171; }
+  .ba-card.after .ba-label { color: var(--accent-light); }
+  .ba-card p { font-size: 13px; color: var(--text-secondary); margin-bottom: 0; line-height: 1.7; }
+  .steps { display: flex; flex-direction: column; gap: 16px; margin: 24px 0; }
+  .step { display: flex; gap: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; }
+  .step-num { flex-shrink: 0; width: 28px; height: 28px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #fff; }
+  .step-body { font-size: 14px; color: var(--text-secondary); }
+  .step-body strong { color: var(--text-primary); display: block; margin-bottom: 4px; font-size: 15px; }
+  .tip-box { background: var(--accent-glow); border: 1px solid rgba(52,211,153,0.3); border-radius: 10px; padding: 16px 20px; margin: 24px 0; font-size: 14px; color: var(--accent-light); display: flex; gap: 10px; }
+  .cta-box { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 32px; margin: 48px 0; text-align: center; }
+  .cta-box h3 { font-size: 20px; font-weight: 800; margin-bottom: 10px; }
+  .cta-box p { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; }
+  .cta-btn { display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: #fff; text-decoration: none; font-size: 14px; font-weight: 700; padding: 12px 24px; border-radius: 10px; }
+  .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); text-decoration: none; font-size: 14px; margin-top: 48px; }
+  .back-link:hover { color: var(--accent-light); }
+  footer { background: var(--surface); border-top: 1px solid var(--border); padding: 40px 24px; margin-top: 80px; }
+  .footer-inner { max-width: 960px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  .footer-copy { font-size: 12px; color: var(--text-muted); }
+  .footer-links { display: flex; gap: 20px; }
+  .footer-link { font-size: 12px; color: var(--text-muted); text-decoration: none; transition: color 0.15s; }
+  .footer-link:hover { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="nav-brand">
+    <div class="nav-logo">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <rect x="0" y="0" width="8" height="8" rx="1.5" fill="white" fill-opacity="0.95"/>
+        <rect x="10" y="0" width="8" height="8" rx="1.5" fill="white" fill-opacity="0.7"/>
+        <rect x="0" y="10" width="8" height="8" rx="1.5" fill="white" fill-opacity="0.6"/>
+        <rect x="10" y="10" width="8" height="8" rx="1.5" fill="white" fill-opacity="0.4"/>
+      </svg>
+    </div>
+    <span class="nav-name">SimulSee</span>
+  </a>
+  <div class="nav-links">
+    <a href="/" class="nav-link">ホーム</a>
+    <a href="/guide" class="nav-link">使い方</a>
+    <a href="/blog" class="nav-link">ブログ</a>
+    <a href="/simulsee" class="nav-cta">アプリを開く →</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+  <div class="breadcrumb">
+    <a href="/">ホーム</a> › <a href="/blog">ブログ</a> › コラボ配信を両視点で見る方法
+  </div>
+
+  <div class="article-tag">活用法</div>
+  <h1>コラボ配信を両方同時に見る方法【視点切り替え不要】</h1>
+  <div class="article-meta">2026年8月 · 読了時間：約4分</div>
+
+  <div class="article-body">
+    <p>コラボ配信は2人以上の配信者が一緒にゲームや雑談をする形式で、多くのファンに愛されています。しかし通常、コラボ配信を見るときはどちらか一方の視点しか楽しめません。</p>
+    <p><strong>両方の配信を同時に画面に並べれば、視点切り替えが不要になります。</strong>互いのリアクションをリアルタイムで見ながら、コラボ配信の面白さを倍増させる方法を紹介します。</p>
+
+    <h2>片方だけ見ていると何を見逃すか</h2>
+    <div class="before-after">
+      <div class="ba-card before">
+        <div class="ba-label">片方だけ見た場合</div>
+        <p>Aさんが話しているとき、Bさんの表情やリアクションが見えない。Bさんの視点でしか語られないコメントやネタを見逃してしまう。チャットで「Bさんの反応やばい」と流れてきても確認できない。</p>
+      </div>
+      <div class="ba-card after">
+        <div class="ba-label">両視点を並べた場合</div>
+        <p>AさんとBさんを同時に表示して互いのリアクションを同時確認。片方の発言に対してもう片方がどう反応しているかが丸わかり。視点を切り替えてアーカイブを見直す必要がない。</p>
+      </div>
+    </div>
+
+    <h2>SimulSeeでコラボ配信を両視点視聴する手順</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <strong>SimulSeeを開く</strong>
+          simulsee.comをブラウザで開きます。ログインや会員登録は不要です。
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <strong>2画面を選択</strong>
+          コラボなら2画面が基本。「＋配信を追加」パネルを2つ設定します。
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <strong>それぞれのURLを貼り付ける</strong>
+          Aさんの配信URLを左パネル、Bさんの配信URLを右パネルに入力します。YouTubeとTwitchが混在してもOKです。
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <strong>音声とレイアウトを調整</strong>
+          どちらかの音声をメインにしてもう片方をミュート、またはどちらもミュートにして字幕やチャットで楽しむスタイルなど、好みで調整します。
+        </div>
+      </div>
+    </div>
+
+    <h2>音声はどちらを聞けばいい？</h2>
+    <p>コラボ配信の場合、2人の音声は基本的に似た内容になります（同じ会話をしているため）。どちらの音声を優先するかは好みで選んで大丈夫です。自分がより感情移入している推しの音声をメインにするのが一般的です。</p>
+    <p>面白いシーンが起きたときは音声を素早く切り替えるのもアリです。SimulSeeの各パネルにはミュートボタンが付いているため、ワンクリックで切り替えられます。</p>
+
+    <div class="tip-box">
+      <span>💡</span>
+      <span>コラボ配信では両方のチャット欄を表示すると、それぞれのファンのコメントも同時に追えて、さらに盛り上がりを感じられます。</span>
+    </div>
+
+    <h2>3人以上のコラボにも対応</h2>
+    <p>3人以上でコラボしている場合も、SimulSeeは最大9画面まで対応しています。3人コラボなら3画面のグリッドレイアウトで全員の視点を並べて楽しめます。誰かのリアクションを見逃す心配がなくなります。</p>
+
+    <h2>チャット欄も一緒に見たい場合</h2>
+    <p>各パネルにはチャット表示のオン/オフ機能があります。コラボ配信では双方のチャット欄を開くと、ファンの盛り上がりの温度差も比較できて面白いです。ただし、チャット欄を開くと動画表示エリアが狭くなるため、状況に合わせて使い分けることをおすすめします。</p>
+
+    <div class="cta-box">
+      <h3>次のコラボは両視点で楽しもう</h3>
+      <p>登録不要・無料。URLを2つ貼るだけで、両視点視聴がスタートします。</p>
+      <a href="/simulsee" class="cta-btn">SimulSeeを開く →</a>
+    </div>
+
+    <h2>まとめ</h2>
+    <p>コラボ配信を両視点で同時に見ることで、それぞれのリアクションや感情の変化が一度に楽しめるようになります。「あの場面のBさんの顔見た？」という感動をリアルタイムで体験できるのは、両視点視聴ならではです。</p>
+    <p>SimulSeeで好きなコラボ配信のURLを2つ貼り付けるだけで、すぐに両視点視聴を始められます。次のコラボ配信でぜひ試してみてください。</p>
+  </div>
+
+  <a href="/blog" class="back-link">← ブログ一覧に戻る</a>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <span class="footer-copy">© 2026 SimulSee</span>
+    <div class="footer-links">
+      <a href="/" class="footer-link">ホーム</a>
+      <a href="/blog" class="footer-link">ブログ</a>
+      <a href="/guide" class="footer-link">使い方</a>
+      <a href="/privacy" class="footer-link">プライバシーポリシー</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

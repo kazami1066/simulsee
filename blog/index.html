@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ブログ — SimulSee</title>
+<meta name="description" content="複数配信の同時視聴に役立つ情報をお届けします。YouTubeとTwitchを使いこなすコツ、マルチ視聴の楽しみ方など。">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6959756264500656" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0d0d10; --surface: #16161b; --surface-high: #1d1d24;
+    --border: #28283a; --accent: #34d399; --accent-light: #6ee7b7;
+    --accent-glow: #34d39933; --text-primary: #f0f0f5;
+    --text-secondary: #8c8ca0; --text-muted: #4e4e64;
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text-primary); font-family: 'Inter', system-ui, sans-serif; line-height: 1.7; }
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(13,13,16,0.85); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .nav-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .nav-logo {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, #6ee7b7 0%, #10b981 50%, #065f46 100%);
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  }
+  .nav-name { font-size: 15px; font-weight: 700; background: linear-gradient(90deg, #6ee7b7, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .nav-links { display: flex; align-items: center; gap: 8px; }
+  .nav-link { color: var(--text-secondary); text-decoration: none; font-size: 13px; font-weight: 500; padding: 6px 12px; border-radius: 6px; transition: color 0.15s, background 0.15s; }
+  .nav-link:hover, .nav-link.active { color: var(--text-primary); background: var(--surface); }
+  .nav-cta { background: var(--accent); color: #fff; text-decoration: none; font-size: 13px; font-weight: 600; padding: 7px 16px; border-radius: 8px; transition: opacity 0.15s; }
+  .nav-cta:hover { opacity: 0.88; }
+  .page-wrap { max-width: 960px; margin: 0 auto; padding: 60px 24px; }
+  .page-header { margin-bottom: 48px; }
+  .page-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-glow); border: 1px solid rgba(52,211,153,0.3); border-radius: 999px; padding: 4px 12px; font-size: 11px; font-weight: 600; color: var(--accent-light); margin-bottom: 16px; }
+  .page-title { font-size: clamp(28px, 4vw, 40px); font-weight: 800; letter-spacing: -1px; line-height: 1.2; margin-bottom: 12px; }
+  .page-desc { font-size: 15px; color: var(--text-secondary); line-height: 1.8; }
+  .articles { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+  .article-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; overflow: hidden; text-decoration: none;
+    transition: border-color 0.2s, transform 0.2s;
+    display: flex; flex-direction: column;
+  }
+  .article-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .article-thumb {
+    height: 140px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+    display: flex; align-items: center; justify-content: center; font-size: 40px;
+  }
+  .article-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+  .article-tag { font-size: 11px; font-weight: 700; color: var(--accent-light); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .article-title { font-size: 16px; font-weight: 700; color: var(--text-primary); line-height: 1.45; margin-bottom: 10px; }
+  .article-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.75; flex: 1; }
+  .article-meta { margin-top: 16px; font-size: 12px; color: var(--text-muted); }
+  footer { background: var(--surface); border-top: 1px solid var(--border); padding: 40px 24px; margin-top: 80px; }
+  .footer-inner { max-width: 960px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  .footer-copy { font-size: 12px; color: var(--text-muted); }
+  .footer-links { display: flex; gap: 20px; }
+  .footer-link { font-size: 12px; color: var(--text-muted); text-decoration: none; transition: color 0.15s; }
+  .footer-link:hover { color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<nav>
+  <a href="/" class="nav-brand">
+    <div class="nav-logo">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <rect x="0" y="0" width="8" height="8" rx="1.5" fill="white" fill-opacity="0.95"/>
+        <rect x="10" y="0" width="8" height="8" rx="1.5" fill="white" fill-opacity="0.7"/>
+        <rect x="0" y="10" width="8" height="8" rx="1.5" fill="white" fill-opacity="0.6"/>
+        <rect x="10" y="10" width="8" height="8" rx="1.5" fill="white" fill-opacity="0.4"/>
+      </svg>
+    </div>
+    <span class="nav-name">SimulSee</span>
+  </a>
+  <div class="nav-links">
+    <a href="/" class="nav-link">ホーム</a>
+    <a href="/guide" class="nav-link">使い方</a>
+    <a href="/blog" class="nav-link active">ブログ</a>
+    <a href="/simulsee" class="nav-cta">アプリを開く →</a>
+  </div>
+</nav>
+
+<div class="page-wrap">
+  <div class="page-header">
+    <div class="page-badge">📝 ブログ</div>
+    <h1 class="page-title">配信視聴をもっと楽しく</h1>
+    <p class="page-desc">複数配信の同時視聴に役立つ情報をお届けします。使い方のコツから、シーン別の活用法まで。</p>
+  </div>
+
+  <div class="articles">
+    <a href="/blog/how-to-watch-multiple-streams" class="article-card">
+      <div class="article-thumb">📺</div>
+      <div class="article-body">
+        <div class="article-tag">入門</div>
+        <div class="article-title">複数の配信を同時に見る方法とは？マルチ視聴の始め方</div>
+        <div class="article-desc">複数の配信を同時に視聴するメリットや、無料で始める方法をわかりやすく解説します。</div>
+        <div class="article-meta">2026年8月</div>
+      </div>
+    </a>
+    <a href="/blog/youtube-twitch-simultaneous" class="article-card">
+      <div class="article-thumb">🎮</div>
+      <div class="article-body">
+        <div class="article-tag">活用法</div>
+        <div class="article-title">YouTubeとTwitchを同時に見る方法【無料・アプリ不要】</div>
+        <div class="article-desc">YoutubeとTwitchは別々のサービスですが、ブラウザだけで両方を同時に視聴できます。</div>
+        <div class="article-meta">2026年8月</div>
+      </div>
+    </a>
+    <a href="/blog/vcr-multiview" class="article-card">
+      <div class="article-thumb">🎯</div>
+      <div class="article-body">
+        <div class="article-tag">活用法</div>
+        <div class="article-title">VCRイベントを複数視点で楽しむ方法</div>
+        <div class="article-desc">VCRイベントは複数の配信者が同じサーバーで遊ぶため、複数視点での視聴が特に楽しいコンテンツです。</div>
+        <div class="article-meta">2026年8月</div>
+      </div>
+    </a>
+    <a href="/blog/oshi-multistream" class="article-card">
+      <div class="article-thumb">⭐</div>
+      <div class="article-body">
+        <div class="article-tag">推し活</div>
+        <div class="article-title">推し活×マルチ配信視聴：複数の推しを同時に追う方法</div>
+        <div class="article-desc">複数の推しが同時に配信しているとき、どちらも見逃したくないですよね。そんなときの解決策を紹介します。</div>
+        <div class="article-meta">2026年8月</div>
+      </div>
+    </a>
+    <a href="/blog/collab-stream-both-pov" class="article-card">
+      <div class="article-thumb">🤝</div>
+      <div class="article-body">
+        <div class="article-tag">活用法</div>
+        <div class="article-title">コラボ配信を両方同時に見る方法【視点切り替え不要】</div>
+        <div class="article-desc">コラボ配信では両者の視点を同時に見ることで、会話の面白さが何倍にもなります。</div>
+        <div class="article-meta">2026年8月</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <span class="footer-copy">© 2026 SimulSee</span>
+    <div class="footer-links">
+      <a href="/" class="footer-link">ホーム</a>
+      <a href="/blog" class="footer-link">ブログ</a>
+      <a href="/guide" class="footer-link">使い方</a>
+      <a href="/privacy" class="footer-link">プライバシーポリシー</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

@@ -6,18 +6,48 @@
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://simulsee.com/simulsee.html</loc>
+    <loc>https://simulsee.com/simulsee</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://simulsee.com/guide.html</loc>
+    <loc>https://simulsee.com/guide</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://simulsee.com/privacy.html</loc>
+    <loc>https://simulsee.com/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://simulsee.com/blog/how-to-watch-multiple-streams</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://simulsee.com/blog/youtube-twitch-simultaneous</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://simulsee.com/blog/vcr-multiview</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://simulsee.com/blog/oshi-multistream</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://simulsee.com/blog/collab-stream-both-pov</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://simulsee.com/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
   </url>
 </urlset>
